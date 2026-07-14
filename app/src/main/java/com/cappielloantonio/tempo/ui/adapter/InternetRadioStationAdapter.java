@@ -14,6 +14,8 @@ import com.cappielloantonio.tempo.R;
 import com.cappielloantonio.tempo.databinding.ItemHomeInternetRadioStationBinding;
 import com.cappielloantonio.tempo.glide.CustomGlideRequest;
 import com.cappielloantonio.tempo.interfaces.ClickCallback;
+import com.cappielloantonio.tempo.radiobrowser.FaviconResolver;
+import com.cappielloantonio.tempo.radiobrowser.RadioBrowserStation;
 import com.cappielloantonio.tempo.subsonic.models.InternetRadioStation;
 import com.cappielloantonio.tempo.util.Constants;
 import com.cappielloantonio.tempo.util.MusicUtil;
@@ -90,10 +92,33 @@ public class InternetRadioStationAdapter extends RecyclerView.Adapter<InternetRa
             return;
         }
 
+        // NEW: Prova a cercare favicon via FaviconResolver (Google, DuckDuckGo, etc.)
+        String resolvedFaviconUrl = FaviconResolver.resolveFavicon(convertToRadioBrowserStation(station));
+        if (resolvedFaviconUrl != null) {
+            Glide.with(holder.itemView.getContext())
+                    .load(resolvedFaviconUrl)
+                    .apply(CustomGlideRequest.createRequestOptions(holder.itemView.getContext(), resolvedFaviconUrl, CustomGlideRequest.ResourceType.Radio))
+                    .error(R.drawable.ic_radio) // Fallback a icona generica
+                    .transition(com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade())
+                    .into(holder.item.internetRadioStationCoverImageView);
+            return;
+        }
+
         Glide.with(holder.itemView.getContext())
                 .load((String) null)
                 .apply(CustomGlideRequest.createRequestOptions(holder.itemView.getContext(), null, CustomGlideRequest.ResourceType.Radio))
                 .into(holder.item.internetRadioStationCoverImageView);
+    }
+
+    /**
+     * Converte InternetRadioStation a RadioBrowserStation per usare FaviconResolver
+     */
+    private RadioBrowserStation convertToRadioBrowserStation(InternetRadioStation station) {
+        RadioBrowserStation radioBrowserStation = new RadioBrowserStation();
+        radioBrowserStation.name = station.getName();
+        radioBrowserStation.favicon = station.getCoverArt(); // Se disponibile
+        radioBrowserStation.homepage = station.getHomePageUrl();
+        return radioBrowserStation;
     }
 
     @Override
